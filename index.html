@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PP TRANSPORTOWE | System Zarządzania</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #050a14;
+            --bg-card: rgba(16, 23, 42, 0.7);
+            --primary: #00f3ff;
+            --secondary: #bc13fe;
+            --accent: #ff007f;
+            --text: #e2e8f0;
+            --text-muted: #64748b;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(0, 243, 255, 0.2);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        .light-mode {
+            --bg-dark: #f1f5f9;
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --primary: #0284c7;
+            --secondary: #7c3aed;
+            --text: #1e293b;
+            --text-muted: #475569;
+            --glass: rgba(0, 0, 0, 0.05);
+            --border: rgba(2, 132, 199, 0.2);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: var(--text); overflow-x: hidden; transition: background 0.3s; }
+        
+        /* ANIMOWANE TŁO */
+        .bg-grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 50px 50px; animation: gridMove 20s linear infinite; }
+        @keyframes gridMove { 0% { transform: translate(0, 0); } 100% { transform: translate(50px, 50px); } }
+        .glow-orb { position: fixed; width: 400px; height: 400px; border-radius: 50%; filter: blur(120px); opacity: 0.4; z-index: -1; animation: float 10s infinite alternate; }
+        .orb-1 { top: -100px; left: -100px; background: var(--primary); }
+        .orb-2 { bottom: -100px; right: -100px; background: var(--secondary); }
+
+        /* GLASSMORPHISM UI */
+        .glass { background: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
+        
+        /* NAVBAR */
+        nav { position: sticky; top: 0; z-index: 100; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(20px); background: rgba(5, 10, 20, 0.8); border-bottom: 1px solid var(--border); }
+        .logo { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--primary); text-shadow: 0 0 10px var(--primary); letter-spacing: 2px; cursor: pointer; }
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-link { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 600; transition: 0.3s; cursor: pointer; text-transform: uppercase; }
+        .nav-link:hover, .nav-link.active { color: var(--primary); text-shadow: 0 0 8px var(--primary); }
+        .btn-neon { padding: 8px 20px; border: 1px solid var(--primary); background: transparent; color: var(--primary); border-radius: 4px; cursor: pointer; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; transition: 0.3s; }
+        .btn-neon:hover { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
+
+        /* LAYOUT */
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
+        .page { display: none; animation: fadeIn 0.5s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* COMPONENTS */
+        h1, h2, h3 { font-family: 'Rajdhani', sans-serif; margin-bottom: 20px; }
+        h1 { font-size: 3rem; background: linear-gradient(90deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; }
+        h2 { color: var(--primary); font-size: 1.8rem; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 30px; }
+        .card { padding: 25px; transition: transform 0.3s, box-shadow 0.3s; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(0, 243, 255, 0.1); }
+        
+        .stat-box { text-align: center; padding: 30px; }
+        .stat-num { font-family: 'Rajdhani', sans-serif; font-size: 3rem; font-weight: 700; color: var(--primary); text-shadow: 0 0 10px var(--primary); display: block; }
+        
+        input, select, textarea { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 1rem; margin-bottom: 15px; transition: 0.3s; }
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
+        label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; }
+        
+        .btn-primary { background: linear-gradient(45deg, var(--primary), var(--secondary)); color: #fff; border: none; padding: 12px 25px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; width: 100%; transition: 0.3s; }
+        .btn-primary:hover { box-shadow: 0 0 20px var(--primary); transform: translateY(-2px); }
+        .btn-sm { padding: 5px 10px; font-size: 0.75rem; width: auto; margin: 2px; }
+        .btn-danger { background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+
+        .line-badge { display: inline-block; width: 40px; height: 40px; border-radius: 50%; text-align: center; line-height: 40px; font-weight: bold; color: #000; margin-bottom: 10px; box-shadow: 0 0 15px currentColor; }
+        
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .alert-critical { border-left: 5px solid var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .alert-high { border-left: 5px solid var(--warning); background: rgba(245, 158, 11, 0.1); }
+        .alert-low { border-left: 5px solid var(--primary); background: rgba(0, 243, 255, 0.1); }
+
+        /* ADMIN PANEL */
+        .admin-layout { display: grid; grid-template-columns: 250px 1fr; gap: 20px; min-height: 80vh; }
+        .admin-sidebar { background: var(--bg-card); padding: 20px; border-right: 1px solid var(--border); height: fit-content; }
+        .admin-menu-item { padding: 12px; margin-bottom: 5px; border-radius: 6px; cursor: pointer; color: var(--text-muted); font-size: 0.9rem; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .admin-menu-item:hover, .admin-menu-item.active { background: rgba(0, 243, 255, 0.1); color: var(--primary); border-left: 2px solid var(--primary); }
+        .admin-content { background: var(--bg-card); padding: 30px; border: 1px solid var(--border); }
+
+        .hidden { display: none !important; }
+        
+        @media (max-width: 768px) {
+            .admin-layout { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://firestore.googleapis.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:firebasestorage.googleapis.com;">
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <nav>
+        <div class="logo" onclick="navigate('home')">PP TRANS</div>
+        <div class="nav-links">
+            <span class="nav-link active" onclick="navigate('home')">Strona Główna</span>
+            <span class="nav-link" onclick="navigate('lines')">Linie</span>
+            <span class="nav-link" onclick="navigate('stations')">Stacje</span>
+            <span class="nav-link" onclick="navigate(' disruptions')">Utrudnienia</span>
+            <span class="nav-link" onclick="navigate('contact')">Kontakt</span>
+            <span class="btn-neon" onclick="navigate('admin-login')">ADMIN</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <!-- HOME -->
+        <div id="page-home" class="page active">
+            <div style="text-align: center; padding: 60px 0;">
+                <h1>Przyszłość Transportu Publicznego</h1>
+                <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto; font-size: 1.1rem;">Profesjonalne systemy zarządzania flotą, pasażerami i logistyką. Wybierz nowoczesność.</p>
+            </div>
+            <div class="grid">
+                <div class="card stat-box"><span class="stat-num" id="s-lines">0</span>Aktywnych Linii</div>
+                <div class="card stat-box"><span class="stat-num" id="s-stations">0</span>Stacji i Przystanków</div>
+                <div class="card stat-box"><span class="stat-num" id="s-disruptions">0</span>Utrudnień</div>
+            </div>
+            <div class="glass" style="margin-top: 40px; padding: 30px;">
+                <h2>⚠️ Ostatnie Komunikaty</h2>
+                <div id="home-alerts"><p style="color:var(--text-muted)">Brak aktywnych komunikatów.</p></div>
+            </div>
+        </div>
+
+        <!-- LINES -->
+        <div id="page-lines" class="page">
+            <h2>Mapa Linii Transportowych</h2>
+            <div class="grid" id="public-lines-list"></div>
+        </div>
+
+        <!-- STATIONS -->
+        <div id="page-stations" class="page">
+            <h2>Przystanki i Stacje</h2>
+            <input type="text" id="search-station" placeholder="🔍 Szukaj przystanku..." oninput="renderPublicStations()">
+            <div class="grid" id="public-stations-list" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- DISRUPTIONS -->
+        <div id="page-disruptions" class="page">
+            <h2>Centrum Utrudnień Drogowych</h2>
+            <div id="public-disruptions-list"></div>
+        </div>
+
+        <!-- CONTACT -->
+        <div id="page-contact" class="page">
+            <h2>Kontakt z PP TRANSPORTOWE</h2>
+            <div class="glass" style="max-width: 600px; padding: 30px; margin-top: 20px;">
+                <label>Nick / Imię</label><input type="text" placeholder="Jan Kowalski">
+                <label>Wiadomość</label><textarea rows="5" placeholder="Opisz problem..."></textarea>
+                <button class="btn-primary">Wyślij zgłoszenie</button>
+            </div>
+        </div>
+
+        <!-- ADMIN LOGIN -->
+        <div id="page-admin-login" class="page">
+            <div class="glass" style="max-width: 400px; margin: 100px auto; padding: 40px; text-align: center;">
+                <h2 style="border:none;">Panel Administratora</h2>
+                <p style="color:var(--danger); font-size:0.8rem; margin-bottom:20px;">Ostrzeżenie: Nieautoryzowany dostęp jest monitorowany.</p>
+                <label>Hasło Bezpieczeństwa</label>
+                <input type="password" id="admin-pass" placeholder="••••••••">
+                <button class="btn-primary" onclick="loginAdmin()">Zaloguj się (2FA Symulacja)</button>
+            </div>
+        </div>
+
+        <!-- ADMIN PANEL -->
+        <div id="page-admin" class="page">
+            <div class="admin-layout">
+                <div class="admin-sidebar glass">
+                    <h3 style="color:var(--primary); margin-bottom:20px; border:none;">Zarządzanie</h3>
+                    <div class="admin-menu-item active" onclick="switchAdminTab('a-dashboard')">📊 Dashboard</div>
+                    <div class="admin-menu-item" onclick="switchAdminTab('a-lines')">🚍 Linie</div>
+                    <div class="admin-menu-item" onclick="switchAdminTab('a-stations')">🏢 Stacje</div>
+                    <div class="admin-menu-item" onclick="switchAdminTab('a-comms">📢 Komunikaty</div>
+                    <div class="admin-menu-item" onclick="switchAdminTab('a-premium)">⚙️ Funkcje Premium</div>
+                    <hr style="border-color:var(--border); margin: 20px 0;">
+                    <div class="admin-menu-item" onclick="toggleTheme()">🌗 Tryb Jasny/Ciemny</div>
+                    <div class="admin-menu-item" style="color:var(--danger)" onclick="logoutAdmin()">🚪 Wyloguj</div>
+                </div>
+                <div class="admin-content">
+                    
+                    <div id="a-dashboard" class="admin-tab">
+                        <h2>Dashboard Systemu</h2>
+                        <div class="grid">
+                            <div class="card stat-box"><span class="stat-num" id="a-s-lines">0</span>Linii w bazie</div>
+                            <div class="card stat-box"><span class="stat-num" id="a-s-stations">0</span>Stacji w bazie</div>
+                        </div>
+                        <div class="glass" style="margin-top:20px; padding:20px;">
+                            <h3>Logi Systemowe (Ostatnie akcje)</h3>
+                            <div id="admin-logs" style="font-family: monospace; font-size: 0.85rem; color: var(--success);">Czekanie na akcje...</div>
+                        </div>
+                    </div>
+
+                    <div id="a-lines" class="admin-tab hidden">
+                        <h2>Zarządzanie Liniami</h2>
+                        <div class="glass" style="padding:20px; margin-bottom:20px;">
+                            <div style="display:grid; grid-template-columns: 1fr 1fr 100px; gap:10px;">
+                                <div><label>Numer Linii</label><input type="text" id="line-num" placeholder="np. A1"></div>
+                                <div><label>Nazwa</label><input type="text" id="line-name" placeholder="np. Lotnisko - Centrum"></div>
+                                <div style="display:flex; flex-direction:column; align-items:center;">
+                                    <label>Kolor</label><input type="color" id="line-color" value="#00f3ff" style="height:45px; padding:0; cursor:pointer;">
+                                </div>
+                            </div>
+                            <button class="btn-primary" onclick="addLine()">Dodaj Linię</button>
+                        </div>
+                        <div id="admin-lines-list"></div>
+                    </div>
+
+                    <div id="a-stations" class="admin-tab hidden">
+                        <h2>Zarządzanie Stacjami</h2>
+                        <div class="glass" style="padding:20px; margin-bottom:20px;">
+                            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px;">
+                                <div><label>Nazwa Stacji/Przystanku</label><input type="text" id="station-name" placeholder="np. Dworzec Centralny"></div>
+                                <div><label>Przypisana Linia (ID)</label><input type="text" id="station-line" placeholder="np. doc-id-linii"></div>
+                            </div>
+                            <button class="btn-primary" onclick="addStation()">Dodaj Stację</button>
+                        </div>
+                        <div id="admin-stations-list"></div>
+                    </div>
+
+                    <div id="a-comms" class="admin-tab hidden">
+                        <h2>Komunikaty i Utrudnienia</h2>
+                        <div class="glass" style="padding:20px; margin-bottom:20px;">
+                            <label>Tytuł</label><input type="text" id="comm-title" placeholder="Awaria trolejbusa">
+                            <label>Treść</label><textarea id="comm-desc" rows="3" placeholder="Szczegóły utrudnienia..."></textarea>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                                <div><label>Priorytet</label>
+                                    <select id="comm-prio">
+                                        <option value="low">Niski</option>
+                                        <option value="high">Wysoki</option>
+                                        <option value="critical">Krytyczny</option>
+                                    </select>
+                                </div>
+                                <div><label>Data Zakończenia (Opcjonalnie)</label><input type="date" id="comm-date"></div>
+                            </div>
+                            <button class="btn-primary" onclick="addComm()">Opublikuj Komunikat</button>
+                        </div>
+                        <div id="admin-comms-list"></div>
+                    </div>
+
+                    <div id="a-premium" class="admin-tab hidden">
+                        <h2>Funkcje Premium & Ustawienia</h2>
+                        <div class="grid">
+                            <div class="card"><h3>Kopia Zapasowa</h3><p style="font-size:0.9rem; color:var(--text-muted); margin:10px 0;">Zapisz aktualny stan bazy danych.</p><button class="btn-primary btn-sm" onclick="alert('PREMIUM: Wymaga serwera do generowania pliku JSON/SQL')">Wykonaj Backup</button></div>
+                            <div class="card"><h3>Eksport do Excel</h3><p style="font-size:0.9rem; color:var(--text-muted); margin:10px 0;">Pobierz listę linii i stacji.</p><button class="btn-primary btn-sm" onclick="alert('PREMIUM: Wymaga biblioteki SheetJS i backendu')">Eksportuj .CSV</button></div>
+                            <div class="card"><h3>Powiadomienia Push</h3><p style="font-size:0.9rem; color:var(--text-muted); margin:10px 0;">Wyślij alert do podróżnych.</p><button class="btn-primary btn-sm" onclick="alert('PREMIUM: Wymaga Service Workers i FCM')">Wyślij Push</button></div>
+                            <div class="card"><h3>Zarządzanie Multimediami</h3><p style="font-size:0.9rem; color:var(--text-muted); margin:10px 0;">Wgraj zdjęcia pojazdów.</p><input type="file" accept="image/*" style="margin-bottom:10px;"><button class="btn-primary btn-sm" onclick="alert('PREMIUM: Wymaga Firebase Storage do hostingu plików')">Prześlij na serwer</button></div>
+                            <div class="card"><h3>Generatory QR</h3><p style="font-size:0.9rem; color:var(--text-muted); margin:10px 0;">Wygeneruj kody QR dla stacji.</p><button class="btn-primary btn-sm" onclick="alert('PREMIUM: Wymaga biblioteki QRCode.js')">Generuj Batch QR</button></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = { apiKey: "AIzaSyAXXEeRwAffgnduFTL3Hg6IDQngBj2Kj6k", authDomain: "tcp-store-8a5b8.firebaseapp.com", projectId: "tcp-store-8a5b8", storageBucket: "tcp-store-8a5b8.appspot.com", messagingSenderId: "8472491405", appId: "1:8472491405:web:76ac9165144b77fdfd39c4" };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let isAdmin = false;
+
+    // --- NAWIGACJA ---
+    window.navigate = function(pageId) {
+        if(pageId.startsWith('admin') && !isAdmin) return navigate('admin-login');
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + pageId).classList.add('active');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    }
+
+    // --- ADMIN LOGOWANIE ---
+    window.loginAdmin = function() {
+        if(document.getElementById('admin-pass').value === "PP_ADMIN_2023") {
+            isAdmin = true;
+            navigate('admin');
+            addLog("Zalogowano pomyślnie do panelu administratora.");
+        } else {
+            alert("Błędne hasło lub brak uprawnień!");
+        }
+    }
+    window.logoutAdmin = function() { isAdmin = false; navigate('home'); }
+    window.switchAdminTab = function(tabId) {
+        document.querySelectorAll('.admin-tab').forEach(t => t.classList.add('hidden'));
+        document.getElementById(tabId).classList.remove('hidden');
+        document.querySelectorAll('.admin-menu-item').forEach(m => m.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    // --- LOGI ---
+    function addLog(action) {
+        const logsDiv = document.getElementById('admin-logs');
+        const time = new Date().toLocaleTimeString('pl-PL');
+        logsDiv.innerHTML = `[${time}] > ${action}<br>` + logsDiv.innerHTML;
+    }
+
+    // --- TRYB JASNY/CIEMNY ---
+    window.toggleTheme = function() {
+        document.body.classList.toggle('light-mode');
+        addLog("Zmieniono motyw kolorystyczny strony.");
+    }
+
+    // --- LINIE ---
+    function loadLines() {
+        onSnapshot(collection(db, "trans_lines"), (snap) => {
+            let pubHtml = '', admHtml = '';
+            let count = 0;
+            snap.forEach(d => {
+                const data = d.data(); count++;
+                const card = `<div class="card" style="border-top: 4px solid ${data.color};">
+                    <div class="line-badge" style="background: ${data.color};">${data.num}</div>
+                    <h3 style="margin:0; color:var(--text);">${data.name}</h3>
+                    <p style="font-size:0.8rem; color:var(--text-muted);">Status: ${data.status || 'Aktywna'}</p>
+                </div>`;
+                pubHtml += card;
+                admHtml += `<div class="glass" style="padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; border-left: 4px solid ${data.color};">
+                    <div><strong style="color:${data.color}">${data.num} - ${data.name}</strong><br><small>ID: ${d.id}</small></div>
+                    <button class="btn-danger" onclick="deleteItem('trans_lines', '${d.id}', 'Usunięto linię ${data.num}')">Usuń</button>
+                </div>`;
+            });
+            document.getElementById('public-lines-list').innerHTML = pubHtml || '<p>Brak linii.</p>';
+            document.getElementById('admin-lines-list').innerHTML = admHtml || '<p>Brak linii.</p>';
+            document.getElementById('s-lines').textContent = count;
+            document.getElementById('a-s-lines').textContent = count;
+        });
+    }
+
+    window.addLine = async function() {
+        const num = document.getElementById('line-num').value.trim();
+        const name = document.getElementById('line-name').value.trim();
+        const color = document.getElementById('line-color').value;
+        if(!num || !name) return alert("Wypełnij numer i nazwę linii!");
+        try {
+            await addDoc(collection(db, "trans_lines"), { num, name, color, status: "Aktywna", createdAt: serverTimestamp() });
+            document.getElementById('line-num').value = ''; document.getElementById('line-name').value = '';
+            addLog(`Dodano nową linię: ${num} ${name}`);
+        } catch(e) { alert("Błąd: " + e.message); }
+    }
+
+    // --- STACJE ---
+    function loadStations() {
+        onSnapshot(collection(db, "trans_stations"), (snap) => {
+            let pubHtml = '', admHtml = '';
+            let count = 0;
+            snap.forEach(d => {
+                const data = d.data(); count++;
+                pubHtml += `<div class="card"><h3 style="color:var(--text); margin:0;">🚏 ${data.name}</h3><p style="font-size:0.8rem; color:var(--text-muted);">Linia ID: ${data.lineId || 'Brak'}</p></div>`;
+                admHtml += `<div class="glass" style="padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <div><strong>🚏 ${data.name}</strong><br><small>Przypisana do: ${data.lineId || 'Brak'} | ID: ${d.id}</small></div>
+                    <button class="btn-danger" onclick="deleteItem('trans_stations', '${d.id}', 'Usunięto stację ${data.name}')">Usuń</button>
+                </div>`;
+            });
+            document.getElementById('public-stations-list').innerHTML = pubHtml || '<p>Brak stacji.</p>';
+            document.getElementById('admin-stations-list').innerHTML = admHtml || '<p>Brak stacji.</p>';
+            document.getElementById('s-stations').textContent = count;
+            document.getElementById('a-s-stations').textContent = count;
+        });
+    }
+
+    window.renderPublicStations = function() {
+        const search = document.getElementById('search-station').value.toLowerCase();
+        const cards = document.querySelectorAll('#public-stations-list .card');
+        cards.forEach(card => {
+            card.style.display = card.innerText.toLowerCase().includes(search) ? 'block' : 'none';
+        });
+    }
+
+    window.addStation = async function() {
+        const name = document.getElementById('station-name').value.trim();
+        const lineId = document.getElementById('station-line').value.trim();
+        if(!name) return alert("Podaj nazwę stacji!");
+        try {
+            await addDoc(collection(db, "trans_stations"), { name, lineId, createdAt: serverTimestamp() });
+            document.getElementById('station-name').value = ''; document.getElementById('station-line').value = '';
+            addLog(`Dodano stację: ${name}`);
+        } catch(e) { alert("Błąd: " + e.message); }
+    }
+
+    // --- KOMUNIKATY ---
+    function loadComms() {
+        onSnapshot(collection(db, "trans_comms"), (snap) => {
+            let pubHtml = '', admHtml = '';
+            let count = 0;
+            snap.forEach(d => {
+                const data = d.data(); count++;
+                let alertClass = 'alert-low';
+                if(data.priority === 'high') alertClass = 'alert-high';
+                if(data.priority === 'critical') alertClass = 'alert-critical';
+                
+                pubHtml += `<div class="alert ${alertClass}">
+                    <div>
+                        <strong>${data.priority === 'critical' ? '🚨 KRYTYCZNE: ' : ''}${data.title}</strong>
+                        <p style="margin:5px 0 0 0; font-size:0.9rem;">${data.desc}</p>
+                    </div>
+                    <small style="color:var(--text-muted);">Koniec: ${data.endDate || 'Brak daty'}</small>
+                </div>`;
+
+                admHtml += `<div class="glass" style="padding:15px; margin-bottom:10px; border-left: 4px solid ${data.priority === 'critical' ? 'var(--danger)' : 'var(--warning)'};">
+                    <div style="display:flex; justify-content:space-between;">
+                        <div><strong>${data.title} [${data.priority.toUpperCase()}]</strong><br><small>${data.desc}</small></div>
+                        <button class="btn-danger" onclick="deleteItem('trans_comms', '${d.id}', 'Usunięto komunikat')">Usuń</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('home-alerts').innerHTML = pubHtml || '<p>Brak aktywnych komunikatów.</p>';
+            document.getElementById('public-disruptions-list').innerHTML = pubHtml || '<p>Brak utrudnień na ten moment.</p>';
+            document.getElementById('admin-comms-list').innerHTML = admHtml || '<p>Brak komunikatów.</p>';
+            document.getElementById('s-disruptions').textContent = count;
+        });
+    }
+
+    window.addComm = async function() {
+        const title = document.getElementById('comm-title').value.trim();
+        const desc = document.getElementById('comm-desc').value.trim();
+        const prio = document.getElementById('comm-prio').value;
+        const endDate = document.getElementById('comm-date').value;
+        if(!title || !desc) return alert("Podaj tytuł i treść!");
+        try {
+            await addDoc(collection(db, "trans_comms"), { title, desc, priority: prio, endDate, createdAt: serverTimestamp() });
+            document.getElementById('comm-title').value = ''; document.getElementById('comm-desc').value = ''; document.getElementById('comm-date').value = '';
+            addLog(`Opublikowano komunikat: ${title} (Priorytet: ${prio})`);
+        } catch(e) { alert("Błąd: " + e.message); }
+    }
+
+    // --- USUWANIE UNIWERSALNE ---
+    window.deleteItem = async function(collectionName, id, logMsg) {
+        if(confirm("Na pewno usunąć ten element?") === false) return;
+        try {
+            await deleteDoc(doc(db, collectionName, id));
+            addLog(logMsg);
+        } catch(e) { alert("Błąd usuwania: " + e.message); }
+    }
+
+    // --- INICJALIZACJA ---
+    loadLines();
+    loadStations();
+    loadComms();
+
+</script>
+</body>
+</html>
