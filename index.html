@@ -76,6 +76,7 @@
         .alert-critical { border-left: 5px solid var(--danger); background: rgba(239, 68, 68, 0.1); }
         .alert-high { border-left: 5px solid var(--warning); background: rgba(245, 158, 11, 0.1); }
         .alert-low { border-left: 5px solid var(--primary); background: rgba(0, 243, 255, 0.1); }
+        .ticket-card { border-left: 4px solid var(--secondary); padding: 15px; margin-bottom: 10px; background: rgba(188, 19, 254, 0.05); border-radius: 4px;}
 
         .admin-layout { display: grid; grid-template-columns: 250px 1fr; gap: 20px; min-height: 80vh; }
         .admin-sidebar { background: var(--bg-card); padding: 20px; border-right: 1px solid var(--border); height: fit-content; }
@@ -91,8 +92,7 @@
             h1 { font-size: 2rem; }
         }
     </style>
-    <!-- ZŁAGODZIONE CSP: DODANO 'blob:' ORAZ UPORZĄDNIONO POPRAWNIE -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://firestore.googleapis.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:firebasestorage.googleapis.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://firestore.googleapis.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com;">
 </head>
 <body>
 
@@ -106,9 +106,8 @@
             <span class="nav-link active" onclick="navigate('home')">Strona Główna</span>
             <span class="nav-link" onclick="navigate('lines')">Linie</span>
             <span class="nav-link" onclick="navigate('stations')">Stacje</span>
-            <!-- NAPRAWIONY BŁĄD: USUNIĘTA SPACJA PRZED 'disruptions' -->
             <span class="nav-link" onclick="navigate('disruptions')">Utrudnienia</span>
-            <span class="nav-link" onclick="navigate('contact')">Kontakt</span>
+            <span class="nav-link" onclick="navigate('contact')">Zgłoś problem</span>
             <span class="btn-neon" onclick="navigate('admin-login')">ADMIN</span>
         </div>
     </nav>
@@ -129,6 +128,10 @@
             <div class="glass" style="margin-top: 40px; padding: 30px;">
                 <h2>⚠️ Ostatnie Komunikaty</h2>
                 <div id="home-alerts"><p style="color:var(--text-muted)">Brak aktywnych komunikatów.</p></div>
+            </div>
+            <div class="glass" style="margin-top: 20px; padding: 30px;">
+                <h2>🛠️ Ostatnie zgłoszenia od pasażerów</h2>
+                <div id="home-tickets"><p style="color:var(--text-muted)">Brak zgłoszeń.</p></div>
             </div>
         </div>
 
@@ -153,11 +156,28 @@
 
         <!-- CONTACT -->
         <div id="page-contact" class="page">
-            <h2>Kontakt z PP TRANSPORTOWE</h2>
+            <h2>Zgłoś problem lub usterkę</h2>
             <div class="glass" style="max-width: 600px; padding: 30px; margin-top: 20px;">
-                <label>Nick / Imię</label><input type="text" placeholder="Jan Kowalski">
-                <label>Wiadomość</label><textarea rows="5" placeholder="Opisz problem..."></textarea>
-                <button class="btn-primary">Wyślij zgłoszenie</button>
+                <label>Twoje Imię / Nick</label><input type="text" id="ticket-name" placeholder="Jan Kowalski">
+                
+                <!-- NOWE: WYBÓR LINII -->
+                <label>Dotyczy linii (opcjonalnie)</label>
+                <select id="ticket-line">
+                    <option value="">-- Ogólne zgłoszenie (nie dotyczy konkretnej linii) --</option>
+                    <!-- Lista linii ładuje się tutaj dynamicznie z bazy danych -->
+                </select>
+
+                <label>Kategoria zgłoszenia</label>
+                <select id="ticket-cat">
+                    <option value="Usterka techniczna">Usterka techniczna</option>
+                    <option value="Skarga na obsługę">Skarga na obsługę</option>
+                    <option value="Zgubiony przedmiot">Zgubiony przedmiot</option>
+                    <option value="Inne">Inne</option>
+                </select>
+                
+                <label>Opis problemu</label><textarea id="ticket-desc" rows="5" placeholder="Opisz szczegółowo sytuację..."></textarea>
+                <button class="btn-primary" onclick="submitTicket()">Wyślij zgłoszenie</button>
+                <div id="ticket-msg" style="margin-top:10px; color:var(--success); font-weight:bold; display:none;">Zgłoszenie wysłane pomyślnie! Nasz zespół przeanalizuje problem.</div>
             </div>
         </div>
 
@@ -167,7 +187,7 @@
                 <h2 style="border:none;">Panel Administratora</h2>
                 <p style="color:var(--danger); font-size:0.8rem; margin-bottom:20px;">Ostrzeżenie: Nieautoryzowany dostęp jest monitorowany.</p>
                 <label>Hasło Bezpieczeństwa</label>
-                <input type="password" id="admin-pass" placeholder="••••••••">
+                <input type="password" id="admin-pass" placeholder="•••••••••">
                 <button class="btn-primary" onclick="loginAdmin()">Zaloguj się</button>
             </div>
         </div>
@@ -181,6 +201,7 @@
                     <div class="admin-menu-item" onclick="switchAdminTab('a-lines')">🚍 Linie</div>
                     <div class="admin-menu-item" onclick="switchAdminTab('a-stations')">🏢 Stacje</div>
                     <div class="admin-menu-item" onclick="switchAdminTab('a-comms')">📢 Komunikaty</div>
+                    <div class="admin-menu-item" onclick="switchAdminTab('a-tickets')">🛠️ Zgłoszenia</div>
                     <div class="admin-menu-item" onclick="switchAdminTab('a-premium')">⚙️ Funkcje Premium</div>
                     <hr style="border-color:var(--border); margin: 20px 0;">
                     <div class="admin-menu-item" onclick="toggleTheme()">🌗 Tryb Jasny/Ciemny</div>
@@ -191,8 +212,9 @@
                     <div id="a-dashboard" class="admin-tab">
                         <h2>Dashboard Systemu</h2>
                         <div class="grid">
-                            <div class="card stat-box"><span class="stat-num" id="a-s-lines">0</span>Linii w bazie</div>
-                            <div class="card stat-box"><span class="stat-num" id="a-s-stations">0</span>Stacji w bazie</div>
+                            <div class="card stat-box"><span class="stat-num" id="a-s-lines">0</span>Linii</div>
+                            <div class="card stat-box"><span class="stat-num" id="a-s-stations">0</span>Stacji</div>
+                            <div class="card stat-box"><span class="stat-num" id="a-s-tickets">0</span>Zgłoszeń</div>
                         </div>
                         <div class="glass" style="margin-top:20px; padding:20px;">
                             <h3>Logi Systemowe</h3>
@@ -247,6 +269,13 @@
                         <div id="admin-comms-list"></div>
                     </div>
 
+                    <!-- ZAKTUALIZOWANE ZGŁOSZENIA -->
+                    <div id="a-tickets" class="admin-tab hidden">
+                        <h2>Zgłoszenia od Pasażerów</h2>
+                        <p style="color:var(--text-muted); margin-bottom:20px;">Tutaj znajdują się wszystkie zgłoszenia. Możesz zmieniać ich status lub je usunąć.</p>
+                        <div id="admin-tickets-list"></div>
+                    </div>
+
                     <div id="a-premium" class="admin-tab hidden">
                         <h2>Funkcje Premium & Ustawienia</h2>
                         <div class="grid">
@@ -264,7 +293,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = { apiKey: "AIzaSyAXXEeRwAffgnduFTL3Hg6IDQngBj2Kj6k", authDomain: "tcp-store-8a5b8.firebaseapp.com", projectId: "tcp-store-8a5b8", storageBucket: "tcp-store-8a5b8.appspot.com", messagingSenderId: "8472491405", appId: "1:8472491405:web:76ac9165144b77fdfd39c4" };
     const app = initializeApp(firebaseConfig);
@@ -272,39 +301,22 @@
 
     let isAdmin = false;
 
-    // --- NAWIGACJA (NAPRAWIONA PĘTLA) ---
     window.navigate = function(pageId) {
-        // Zabezpieczenie: blokuje TYLKO panel admina, pozwala na stronę logowania
-        if(pageId === 'admin' && !isAdmin) {
-            pageId = 'admin-login'; 
-        }
-        
+        if(pageId === 'admin' && !isAdmin) pageId = 'admin-login'; 
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         const targetPage = document.getElementById('page-' + pageId);
-        if(targetPage) {
-            targetPage.classList.add('active');
-        }
-        
+        if(targetPage) targetPage.classList.add('active');
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
     }
 
-    // --- ADMIN LOGOWANIE ---
     window.loginAdmin = function() {
-        const pass = document.getElementById('admin-pass').value;
-        if(pass === "PP_ADMIN_2023") {
-            isAdmin = true;
-            navigate('admin');
-            addLog("Zalogowano pomyślnie do panelu administratora.");
-            document.getElementById('admin-pass').value = ''; // Czyści hasło po zalogowaniu
-        } else {
-            alert("Błędne hasło lub brak uprawnień!");
-        }
+        if(document.getElementById('admin-pass').value === "PP_ADMIN_2023") {
+            isAdmin = true; navigate('admin'); addLog("Zalogowano do panelu admina.");
+            document.getElementById('admin-pass').value = ''; 
+        } else { alert("Błędne hasło!"); }
     }
     
-    window.logoutAdmin = function() { 
-        isAdmin = false; 
-        navigate('home'); 
-    }
+    window.logoutAdmin = function() { isAdmin = false; navigate('home'); }
 
     window.switchAdminTab = function(tabId) {
         document.querySelectorAll('.admin-tab').forEach(t => t.classList.add('hidden'));
@@ -313,161 +325,126 @@
         if(event && event.target) event.target.classList.add('active');
     }
 
-    // --- LOGI ---
     function addLog(action) {
         const logsDiv = document.getElementById('admin-logs');
         if(!logsDiv) return;
-        const time = new Date().toLocaleTimeString('pl-PL');
-        logsDiv.innerHTML = `<span style="color:var(--text-muted)">[${time}]</span> > ${action}<br>` + logsDiv.innerHTML;
+        const time = new Date().toLocaleString('pl-PRĘDZYSTWOJ CZASIEŃ);
+        logsDiv.innerHTML = `<span style="color:var(--text-muted)">[${time}]</span> ${action}<br>` + logsDiv.innerHTML;
     }
 
-    // --- TRYB JASNY/CIEMNY ---
-    window.toggleTheme = function() {
-        document.body.classList.toggle('light-mode');
-        addLog("Zmieniono motyw kolorystyczny strony.");
-    }
+    window.toggleTheme = function() { document.body.classList.toggle('light-mode'); addLog("Zmieniono motyw strony."); }
 
-    // --- LINIE ---
-    function loadLines() {
-        onSnapshot(collection(db, "trans_lines"), (snap) => {
-            let pubHtml = '', admHtml = '';
-            let count = 0;
-            snap.forEach(d => {
-                const data = d.data(); count++;
-                pubHtml += `<div class="card" style="border-top: 4px solid ${data.color};">
-                    <div class="line-badge" style="background: ${data.color};">${data.num}</div>
-                    <h3 style="margin:0; color:var(--text);">${data.name}</h3>
-                    <p style="font-size:0.8rem; color:var(--text-muted);">Status: ${data.status || 'Aktywna'}</p>
-                </div>`;
-                admHtml += `<div class="glass" style="padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; border-left: 4px solid ${data.color};">
-                    <div><strong style="color:${data.color}">${data.num} - ${data.name}</strong><br><small style="color:var(--text-muted)">ID: ${d.id}</small></div>
-                    <button class="btn-danger" onclick="deleteItem('trans_lines', '${d.id}', 'Usunięto linię ${data.num}')">Usuń</button>
-                </div>`;
-            });
-            document.getElementById('public-lines-list').innerHTML = pubHtml || '<p>Brak linii.</p>';
-            document.getElementById('admin-lines-list').innerHTML = admHtml || '<p>Brak linii.</p>';
-            document.getElementById('s-lines').textContent = count;
-            document.getElementById('a-s-lines').textContent = count;
-        });
-    }
+    // --- ZGŁOSZENIA (OD NOWA) Z WYBOREM LINII ---
+    window.submitTicket = async function() {
+        const name = document.getElementById('ticket-name').value.trim();
+        const cat = document.getElementById('ticket-cat').value;
+        const desc = document.getElementById('ticketizdesc').value.trim();
+        const lineSelect = document.getElementById('ticket-line');
+        const lineId = lineSelect.value;
+        
+        // Pobieramy pełną nazwę wybranej linii (np. "L1 - Lotnisko - Centrum") lub zostawiamy puste jeśli wybrano "Ogólne zgłoszenie"
+        let lineName = "Brak wybrane linii"; 
+        if(lineId) {
+            lineName = lineSelect.options[lineSelect.selectedIndex].text;
+        }
 
-    window.addLine = async function() {
-        const num = document.getElementById('line-num').value.trim();
-        const name = document.getElementById('line-name').value.trim();
-        const color = document.getElementById('line-color').value;
-        if(!num || !name) return alert("Wypełnij numer i nazwę linii!");
+        if(!name || !desc) return alert("Wypełnij imię i opis problemu!");
+        
         try {
-            await addDoc(collection(db, "trans_lines"), { num, name, color, status: "Aktywna", createdAt: serverTimestamp() });
-            document.getElementById('line-num').value = ''; 
-            document.getElementById('line-name').value = '';
-            addLog(`Dodano nową linię: ${num} ${name}`);
-        } catch(e) { alert("Błąd bazy: " + e.message); }
-    }
-
-    // --- STACJE ---
-    function loadStations() {
-        onSnapshot(collection(db, "trans_stations"), (snap) => {
-            let pubHtml = '', admHtml = '';
-            let count = 0;
-            snap.forEach(d => {
-                const data = d.data(); count++;
-                pubHtml += `<div class="card"><h3 style="color:var(--text); margin:0;">🚏 ${data.name}</h3><p style="font-size:0.8rem; color:var(--text-muted);">Linia ID: ${data.lineId || 'Brak'}</p></div>`;
-                admHtml += `<div class="glass" style="padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                    <div><strong>🚏 ${data.name}</strong><br><small style="color:var(--text-muted)">Przypisana do: ${data.lineId || 'Brak'} | ID: ${d.id}</small></div>
-                    <button class="btn-danger" onclick="deleteItem('trans_stations', '${d.id}', 'Usunięto stację ${data.name}')">Usuń</button>
-                </div>`;
-            });
-            document.getElementById('public-stations-list').innerHTML = pubHtml || '<p>Brak stacji.</p>';
-            document.getElementById('admin-stations-list').innerHTML = admHtml || '<p>Brak stacji.</p>';
-            document.getElementById('s-stations').textContent = count;
-            document.getElementById('a-s-stations').textContent = count;
-        });
-    }
-
-    window.renderPublicStations = function() {
-        const search = document.getElementById('search-station').value.toLowerCase();
-        const cards = document.querySelectorAll('#public-stations-list .card');
-        cards.forEach(card => {
-            card.style.display = card.innerText.toLowerCase().includes(search) ? 'block' : 'none';
-        });
-    }
-
-    window.addStation = async function() {
-        const name = document.getElementById('station-name').value.trim();
-        const lineId = document.getElementById('station-line').value.trim();
-        if(!name) return alert("Podaj nazwę stacji!");
-        try {
-            await addDoc(collection(db, "trans_stations"), { name, lineId, createdAt: serverTimestamp() });
-            document.getElementById('station-name').value = ''; 
-            document.getElementById('station-line').value = '';
-            addLog(`Dodano stację: ${name}`);
-        } catch(e) { alert("Błąd bazy: " + e.message); }
-    }
-
-    // --- KOMUNIKATY (UTRUDNIENIA) ---
-    function loadComms() {
-        onSnapshot(collection(db, "trans_comms"), (snap) => {
-            let pubHtml = '', admHtml = '';
-            let count = 0;
-            snap.forEach(d => {
-                const data = d.data(); count++;
-                let alertClass = 'alert-low';
-                let icon = 'ℹ️';
-                if(data.priority === 'high') { alertClass = 'alert-high'; icon = '⚠️'; }
-                if(data.priority === 'critical') { alertClass = 'alert-critical'; icon = '🚨'; }
-                
-                pubHtml += `<div class="alert ${alertClass}">
-                    <div>
-                        <strong>${icon} ${data.title}</strong>
-                        <p style="margin:5px 0 0 0; font-size:0.9rem;">${data.desc}</p>
-                    </div>
-                    <small style="color:var(--text-muted); white-space:nowrap;">Koniec: ${data.endDate || 'Brak daty'}</small>
-                </div>`;
-
-                admHtml += `<div class="glass" style="padding:15px; margin-bottom:10px; border-left: 4px solid ${data.priority === 'critical' ? 'var(--danger)' : 'var(--warning)'};">
-                    <div style="display:flex; justify-content:space-between;">
-                        <div><strong>[${data.priority.toUpperCase()}] ${data.title}</strong><br><small>${data.desc}</small></div>
-                        <button class="btn-danger" onclick="deleteItem('trans_comms', '${d.id}', 'Usunięto komunikat')">Usuń</button>
-                    </div>
-                </div>`;
+            await addDoc(collection(db, "trans_tickets"), {
+                name: name, 
+                category: cat, 
+                description: desc, 
+                lineId: lineId,
+                lineName: lineName,
+                status: "Oczekuje na rozpatrzenie",
+                createdAt: serverTimestamp()
             });
             
-            document.getElementById('home-alerts').innerHTML = pubHtml || '<p>Brak aktywnych komunikatów.</p>';
-            document.getElementById('public-disruptions-list').innerHTML = pubHtml || '<p>Brak utrudnień na ten moment.</p>';
-            document.getElementById('admin-comms-list').innerHTML = admHtml || '<p>Brak komunikatów.</p>';
-            document.getElementById('s-disruptions').textContent = count;
+            // Czyścimy formularz i pokazujemy sukces
+            document.getElementById('ticket-name').value = ''; 
+            document.getElementById('ticketizdesc').value = '';
+            lineSelect.selectedIndex = 0; // Reset na pierwszą opcję
+            
+            document.getElementById('ticket-msg').style.display = 'block';
+            setTimeout(() => document.getElementById('ticket-msg').style.display = 'none', 4000);
+            
+        } catch (error) {
+            console.error("Błąd zgłoszenia:", error);
+            if(error.code === 'permission-denied') {
+                alert("BŁĄD: Brak uprawnień do bazy! Wejdź w Firebase Console -> Firestore Database -> Zasady i ustaw na 'allow read, write: if true;'");
+            } else {
+                alert("Błąd: " + error.message);
+            }
+        }
+    }
+
+    function loadTickets() {
+        onSnapshot(collection(db, "trans_tickets"), (snap) => {
+            let homeHtml = '', adminHtml = '';
+            let count = 0;
+            snap.forEach(d => {
+                const data = d.data(); count++;
+                const time = data.createdAt ? data.createdAt.toDate().toLocaleString('pl-PL') : '';
+                
+                const publicCard = `<div class="ticket-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                        <strong style="color:var(--secondary);">${data.category}</strong>
+                        <small style="color:var(--text-muted);">Wysłano: ${time}</small>
+                    </div>
+                    <p style="font-size:0.9rem;">"${data.description}"</p>
+                    <p style="font-size:0.8rem; margin-top:5px; color:var(--text-muted);">Wysłane przez: <strong>${data.name}</strong> | Status: ${data.status} | Linia: ${data.lineName}</p>
+                </div>`;
+
+                const adminCard = `<div class="glass" style="padding:15px; margin-bottom:10px; border-left: 4px solid var(--warning);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:20px;">
+                        <div style="flex:1;">
+                            <strong>[${data.category}] ${data.name}</strong> ${data.lineName !== 'Brak wybrane linii' ? `(${data.lineName})` : ''}<br>
+                            <p style="font-size:0.9rem; margin:5px 0;">"${data.description}"</p>
+                            <small style="color:var(--text-muted);">${time} | ID: ${d.id}</small>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:5px; min-width: 150px;">
+                            <select onchange="changeTicketStatus('${d.id}', this.value)" style="font-size:0.8rem; padding:5px; margin:0;">
+                                <option value="Oczekuje na rozpatrzenie" ${data.status==='Oczekuje na rozpatrzenie'?'selected':''}>Oczekuje</option>
+                                <option value="W trakcie realizacji" ${data.status==='W trakcie realizacji'?'selected':''}>W realizacji</option>
+                                <option value="Rozwiązane" ${data.status==='Rozwiązane'?'selected':''}>Rozwiązane</option>
+                                <option value="Odrzucone" ${data.status==='Odrzucone'?'selected':''}>Odrzucone</option>
+                            </select>
+                            <button class="btn-danger" onclick="deleteItem('trans_tickets', '${d.id}', 'Usunięto zgłoszenie od ${data.name}')">Usuń trwale</button>
+                        </div>
+                    </div>
+                </div>`;
+
+                homeHtml += publicCard;
+                adminHtml += adminCard;
+            });
+            document.getElementById('home-tickets').innerHTML = homeHtml || '<p style="color:var(--text-muted)">Brak zgłoszeń.</p>';
+            document.getElementById('admin-tickets-list').innerHTML = adminHtml || '<p style="color:var(--text-muted)">Brak zgłoszeń.</p>';
+            document.getElementById('a-s-tickets').textContent = count;
         });
     }
 
-    window.addComm = async function() {
-        const title = document.getElementById('comm-title').value.trim();
-        const desc = document.getElementById('comm-desc').value.trim();
-        const prio = document.getElementById('comm-prio').value;
-        const endDate = document.getElementById('comm-date').value;
-        if(!title || !desc) return alert("Podaj tytuł i treść!");
-        try {
-            await addDoc(collection(db, "trans_comms"), { title, desc, priority: prio, endDate, createdAt: serverTimestamp() });
-            document.getElementById('comm-title').value = ''; 
-            document.getElementById('comm-desc').value = ''; 
-            document.getElementById('comm-date').value = '';
-            addLog(`Opublikowano komunikat: ${title} (Priorytet: ${prio})`);
-        } catch(e) { alert("Błąd bazy: " + e.message); }
+    window.changeTicketStatus = async function(id, status) {
+        try { await updateDoc(doc(db, "trans_tickets", id), { status }); addLog(`Zmieniono status zgłoszenia na: ${status}`); } 
+        catch(e) { alert("Błąd: "+e.message); }
     }
 
-    // --- USUWANIE UNIWERSALNE ---
-    window.deleteItem = async function(collectionName, id, logMsg) {
-        if(confirm("Na pewno usunąć ten element?") === false) return;
-        try {
-            await deleteDoc(doc(db, collectionName, id));
-            addLog(logMsg);
-        } catch(e) { alert("Błąd usuwania: " + e.message); }
-    }
-
-    // --- INICJALIZACJA ---
-    loadLines();
-    loadStations();
-    loadComms();
-
-</script>
-</body>
-</html>
+    // --- LINIE (Z AKTUALIZACJĄ DLA ZGŁOSZEŃ) ---
+    function loadLines() {
+        onSnapshot(collection(db, "trans_lines"), (snap) => {
+            let pubHtml = '', admHtml = ''; let count = 0;
+            
+            // Generujemy listę dla publicznej strony i jednocześnie wypełniamy listę w formularzu zgłoszeń
+            let lineOptions = '<option value="">-- Ogólne zgłoszenie (nie dotyczy konkretnej linii) --</option>';
+            
+            snap.forEach(d => {
+                const data = d.data(); count++;
+                pubHtml += `<div class="card" style="border-top: 4px solid ${data.color};"><div class="line-badge" style="background: ${data.color};">${data.num}</div><h3 style="margin:0; color:var(--text);">${data.name}</h3><p style="font-size:0.8rem; color:var(--text-muted);">Status: ${data.status || 'Aktywna'}</p></div>`;
+                admHtml += `<div class="glass" style="padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; border-left: 4px solid ${data.color};"><div><strong style="color:${data.color}">${data.num} - ${data.name}</strong><br><small style="color:var(--text-muted)">ID: ${d.id}</small></div><button class="btn-danger" onclick="deleteItem('trans_lines', '${d.id}', 'Usunięto linię ${data.num}')">Usuń</button></div>`;
+                
+                // Dodajemy opcję do selecta w formularzu zgłoszeń
+                lineOptions += `<option value="${d.id}">${data.num} - ${data.name}</option>`;
+            });
+            
+            document.getElementById('public-lines-list').innerHTML = pubHtml || '<p>Brak linii.</p>';
+            document.getElementById('admin-lines-list').innerHTML = ad
